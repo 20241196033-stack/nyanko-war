@@ -20,10 +20,11 @@
     .my-castle { left: 0; }
     .enemy-castle { right: 0; }
 
-    .nyanko, .kyonsi, .enemy {
+    /* ← satera を追加した！ */
+    .nyanko, .kyonsi, .enemy, .kai, .satera {
         position: absolute;
         bottom: 0;
-        height: 80px;
+        height: 40px;
     }
 
     .castle-hp {
@@ -46,6 +47,8 @@
 
     #spawn-neko { position:absolute; bottom:10px; left:10px; }
     #spawn-masai { position:absolute; bottom:10px; left:180px; }
+    #spawn-kai { position:absolute; bottom:10px; left:350px; }
+    #spawn-satera { position:absolute; bottom:10px; left:520px; }
 </style>
 </head>
 <body>
@@ -64,27 +67,24 @@
     <img src="./my_castle.png" class="castle my-castle">
     <img src="./enemy_castle.png" class="castle enemy-castle">
 
-    <button id="spawn-neko">
-        にゃんこ出撃（30円）
-    </button>
-    <button id="spawn-masai">
-        ネコキョンシー出撃（75円）
-    </button>
+    <button id="spawn-kai">召し豚のカイ(750円)</button>
+    <button id="spawn-neko">にゃんこ出撃（30円）</button>
+    <button id="spawn-masai">ネコキョンシー出撃（75円）</button>
+    <button id="spawn-satera">ネコサテライト出撃(135円)</button>
 
 </div>
 
 <script>
 /* -------------------------
-   お金システム
+   お金
 -------------------------- */
-let money = 150;
+let money = 300;
 const moneyText = document.getElementById("money-value");
 
 setInterval(() => {
-        money += 2;
-        moneyText.textContent = money;
-
-}, 25);
+    money += 3;
+    moneyText.textContent = money;
+}, 40);
 
 /* -------------------------
    城HP
@@ -96,17 +96,21 @@ const myCastleHPText = document.getElementById("my-castle-hp");
 const enemyCastleHPText = document.getElementById("enemy-castle-hp");
 
 /* -------------------------
-   出撃ボタン
+   ボタン
 -------------------------- */
 const battle = document.querySelector(".battle");
 const spawnNekoBtn = document.getElementById("spawn-neko");
 const spawnKyonBtn = document.getElementById("spawn-masai");
+const spawnKaiBtn = document.getElementById("spawn-kai");
+const spawnSateraBtn = document.getElementById("spawn-satera");  // ← 追加！
 
 spawnNekoBtn.addEventListener("click", spawnNeko);
 spawnKyonBtn.addEventListener("click", spawnKyonsi);
+spawnKaiBtn.addEventListener("click", spawnKai);
+spawnSateraBtn.addEventListener("click", spawnSatera);           // ← 追加！
 
 /* -------------------------
-   共通：味方キャラ生成ロジック
+   味方生成
 -------------------------- */
 function createAlly(imgSrc, cssClass, hp, speed){
     const unit = document.createElement("img");
@@ -123,7 +127,6 @@ function createAlly(imgSrc, cssClass, hp, speed){
         pos += speed;
         unit.style.left = pos + "px";
 
-        // 敵と衝突
         const enemies = document.querySelectorAll(".enemy");
         enemies.forEach(enemy => {
             const ux = unit.getBoundingClientRect().left;
@@ -136,7 +139,6 @@ function createAlly(imgSrc, cssClass, hp, speed){
             }
         });
 
-        // 敵城に到達
         if(pos > window.innerWidth - 200){
             clearInterval(walk);
             attackCastle("enemy");
@@ -148,46 +150,57 @@ function createAlly(imgSrc, cssClass, hp, speed){
 }
 
 /* -------------------------
-   にゃんこ出撃
+   出撃関数
 -------------------------- */
 function spawnNeko(){
     const cost = 30;
-    if(money < cost){
-        alert("お金が足りない！");
-        return;
-    }
+    if(money < cost) return alert("お金が足りない！");
     money -= cost;
     moneyText.textContent = money;
-
     createAlly("./neko.png", "nyanko", 100, 2);
 }
 
-/* -------------------------
-   ネコキョンシー出撃
--------------------------- */
 function spawnKyonsi(){
     const cost = 75;
-    if(money < cost){
-        alert("お金が足りない！");
-        return;
-    }
+    if(money < cost) return alert("お金が足りない！");
     money -= cost;
     moneyText.textContent = money;
-
     createAlly("./kyonsi.png", "kyonsi", 300, 1.2);
 }
 
+function spawnKai(){
+    const cost = 750;
+    if(money < cost) return alert("お金が足りない！");
+    money -= cost;
+    moneyText.textContent = money;
+    createAlly("./mesikai.png", "kai", 500, 1.5);
+}
+
+function spawnSatera(){
+    const cost = 135;
+    if(money < cost) return alert("お金が足りない！");
+    money -= cost;
+    moneyText.textContent = money;
+    createAlly("./satera.png", "satera", 200, 3);
+}
+
 /* -------------------------
-   敵出現
+   敵
 -------------------------- */
 function spawnEnemy(){
-    const enemy = document.createElement("img");
-    enemy.src = "./wanko.png";
-    enemy.style.backgroundColor = "transparent";
+    const enemyTypes = [
+        { src: "./wanko.png", hp: 80 },
+        { src: "./hebi.png", hp: 120 },
+        { src: "./me-.png", hp: 150 }
+    ];
 
+    const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+
+    const enemy = document.createElement("img");
+    enemy.src = type.src;
     enemy.classList.add("enemy");
     enemy.style.right = "50px";
-    enemy.hp = 80;
+    enemy.hp = type.hp;
 
     battle.appendChild(enemy);
 
@@ -197,8 +210,7 @@ function spawnEnemy(){
         pos += 2;
         enemy.style.right = pos + "px";
 
-        // 味方（にゃんこ＆キョンシー）と衝突
-        const allies = document.querySelectorAll(".nyanko, .kyonsi");
+        const allies = document.querySelectorAll(".nyanko, .kyonsi, .kai, .satera");
         allies.forEach(ally => {
             const ax = ally.getBoundingClientRect().left;
             const ex = enemy.getBoundingClientRect().left;
@@ -210,7 +222,6 @@ function spawnEnemy(){
             }
         });
 
-        // 味方城に到達
         if(pos > window.innerWidth - 200){
             clearInterval(walk);
             attackCastle("my");
@@ -221,43 +232,33 @@ function spawnEnemy(){
     enemy.walkInterval = walk;
 }
 
-// 敵を2秒ごとに出す
 setInterval(spawnEnemy, 2000);
 
 /* -------------------------
-   戦闘処理
+   戦闘
 -------------------------- */
 function battleFight(ally, enemy){
     const fight = setInterval(() => {
-
-        // 味方の攻撃力
         let allyAtk = 19;
-        if(ally.classList.contains("kyonsi")){
-            allyAtk = 40;   // ← キョンシーだけ攻撃力アップ
-        }
+        if(ally.classList.contains("kyonsi")) allyAtk = 40;
+        if(ally.classList.contains("kai")) allyAtk = 100;
 
-        // 敵の攻撃力
         let enemyAtk = 10;
 
-        // ダメージ処理
         ally.hp -= enemyAtk;
         enemy.hp -= allyAtk;
 
-        // 味方死亡
         if(ally.hp <= 0){
             ally.remove();
             clearInterval(fight);
         }
 
-        // 敵死亡
         if(enemy.hp <= 0){
             enemy.remove();
             clearInterval(fight);
         }
-
-    }, 250); // 0.5秒ごとに攻撃
+    }, 250);
 }
-
 
 /* -------------------------
    城攻撃
@@ -266,11 +267,11 @@ function attackCastle(target){
     if(target === "enemy"){
         enemyCastleHP -= 100;
         enemyCastleHPText.textContent = enemyCastleHP;
-        if(enemyCastleHP <= 0) documnet.while("完全勝利")
+        if(enemyCastleHP <= 0) alert("🎉 完全勝利！");
     } else {
         myCastleHP -= 100;
         myCastleHPText.textContent = myCastleHP;
-        if(myCastleHP <= 0) alert("敗北…");
+        if(myCastleHP <= 0) alert("😵 敗北…");
     }
 }
 </script>
